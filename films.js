@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('./db');
 
+
 // 1. GET / : liste complète
 router.get('/', async (req, res) => {
   const [rows] = await db.execute('SELECT * FROM films');
@@ -11,7 +12,7 @@ router.get('/', async (req, res) => {
 // 2. GET /:id : film par ID
 router.get('/:id', async (req, res) => {
   //TODO : ECRIRE LA REQUETE PREPAREE
-  // const [rows] = 
+  const [rows] = await db.execute('SELECT * FROM films WHERE id = ?', [req.params.id]);
   if (rows.length === 0) return res.status(404).send('Film non trouvé');
   res.json(rows[0]);
 });
@@ -23,6 +24,7 @@ router.post('/', async (req, res) => {
 
   try {
     //TODO : ECRIRE LA REQUETE PREPAREE
+    await db.execute('INSERT INTO films (id, titre) VALUES (?, ?)', [id, titre]);
     res.status(201).send('Film ajouté');
   } catch (err) {
     res.status(500).send('Erreur : ' + err.message);
@@ -31,12 +33,31 @@ router.post('/', async (req, res) => {
 
 // 4. PATCH /:id : modification du titre
 router.patch('/:id', async (req, res) => {
-  const { titre } = req.body;
-  if (!titre) return res.status(400).send('Nouveau titre requis');
-    
-  //TODO : ECRIRE LA REQUETE PREPAREE
-  if (result.affectedRows === 0) return res.status(404).send('Film non trouvé');
-  res.send('Titre mis à jour');
+  const { titre, realisateur, annee_sortie, genre, duree_minutes, note, age_film } = req.body;
+
+  if (!titre || !realisateur || !annee_sortie || !genre || !duree_minutes || !note || !age_film) {
+    return res.status(400).send('Tous les champs sont requis pour la mise à jour');
+  }
+
+  try {
+    const [result] = await db.execute(
+      `UPDATE films SET 
+        titre = ?, 
+        realisateur = ?, 
+        annee_sortie = ?, 
+        genre = ?, 
+        duree_minutes = ?, 
+        note = ?,
+        age_film = ?
+       WHERE id = ?`,
+      [titre, realisateur, annee_sortie, genre, duree_minutes, note, age_film, req.params.id]
+    );
+
+    if (result.affectedRows === 0) return res.status(404).send('Film non trouvé');
+    res.send('Film mis à jour');
+  } catch (err) {
+    res.status(500).send('Erreur : ' + err.message);
+  }
 });
 
 // 5. DELETE /:id : suppression
