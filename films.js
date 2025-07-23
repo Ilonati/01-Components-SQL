@@ -2,6 +2,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('./db');
 
+const filmShema = Joi.object({
+  titre: Joi.string().alphanum().min(3).max(50).require(),
+  realisateur: Joi.string().alphanum().min(3).max(50).require(),
+  annee_sortie: Joi.number().integer().min(1900).max(2025).optional(),
+  genre: Joi.string().alphanum().min(3).max(50).require(),
+  duree_minutes: Joi.datetime().alphanum().min(1).max(400).require(),
+  note: Joi.number().precision(1).min(1).max(10).optional(),
+  age_film: Joi.number().integer().min(0).max(120).optional(),
+});
+
+const { error, value } = filmShema.validate(req.body.film)
+if (error) req.send('Error validation donnes: + error.details[0].message');
 
 // 1. GET / : liste complète
 router.get('/', async (req, res) => {
